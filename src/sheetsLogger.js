@@ -1,8 +1,6 @@
 const { google } = require("googleapis");
 const fs = require("fs");
 const path = require("path");
-const http = require("http");
-const url = require("url");
 
 const TOKEN_PATH = path.join(__dirname, "../config/oauth-token.json");
 
@@ -16,34 +14,36 @@ function getOAuthClient() {
   );
 }
 
+function getToken() {
+  if (process.env.GOOGLE_OAUTH_TOKEN) {
+    return JSON.parse(process.env.GOOGLE_OAUTH_TOKEN);
+  }
+  if (fs.existsSync(TOKEN_PATH)) {
+    return JSON.parse(fs.readFileSync(TOKEN_PATH));
+  }
+  throw new Error(
+    "Not authorized yet. Run: node authorize.js — then follow the link to log in with Google."
+  );
+}
+
 async function getSheetsClient() {
   if (sheetsClient) return sheetsClient;
 
   const oAuth2Client = getOAuthClient();
-
-  if (!fs.existsSync(TOKEN_PATH)) {
-    throw new Error(
-      "Not authorized yet. Run: node authorize.js  — then follow the link to log in with Google."
-    );
-  }
-
-  const token = JSON.parse(fs.readFileSync(TOKEN_PATH));
+  const token = getToken();
   oAuth2Client.setCredentials(token);
 
-  // Auto-refresh if expired
   oAuth2Client.on("tokens", (tokens) => {
-    const updated = { ...token, ...tokens };
-    fs.writeFileSync(TOKEN_PATH, JSON.stringify(updated));
+    if (!process.env.GOOGLE_OAUTH_TOKEN && fs.existsSync(TOKEN_PATH)) {
+      const updated = { ...token, ...tokens };
+      fs.writeFileSync(TOKEN_PATH, JSON.stringify(updated));
+    }
   });
 
   sheetsClient = google.sheets({ version: "v4", auth: oAuth2Client });
   return sheetsClient;
 }
 
-/**
- * Appends rows to the Google Sheet.
- * Each row: [Date, Order #, Product, Color, Print Name, Quantity, Status]
- */
 async function appendPrintRows(rows) {
   const sheets = await getSheetsClient();
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
@@ -59,15 +59,10 @@ async function appendPrintRows(rows) {
   });
 }
 
-/**
- * Creates the header row if the sheet is empty.
- * Call this once during setup.
- */
 async function initializeSheet() {
   const sheets = await getSheetsClient();
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  // Check if header exists
   const existing = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: "Print Log!A1:G1",
@@ -78,7 +73,6 @@ async function initializeSheet() {
     return;
   }
 
-  // Write header row
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: "Print Log!A1:G1",
@@ -88,7 +82,6 @@ async function initializeSheet() {
     },
   });
 
-  // Bold the header row
   const sheetId = await getSheetId(sheets, spreadsheetId, "Print Log");
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId,
@@ -110,7 +103,6 @@ async function initializeSheet() {
 
 async function getSheetId(sheets, spreadsheetId, sheetName) {
   const meta = await sheets.spreadsheets.get({ spreadsheetId });
-
   const sheet = meta.data.sheets.find(
     (s) => s.properties.title === sheetName
   );
