@@ -4,16 +4,22 @@ const { processOrder } = require("./orderProcessor");
 
 const app = express();
 
-// Raw body needed for HMAC verification
 app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
 
 function verifyShopifyWebhook(req) {
   const hmac = req.headers["x-shopify-hmac-sha256"];
-  if (!hmac) return false;
+  const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
+
+  if (!hmac || !secret) {
+    console.warn("Missing HMAC header or webhook secret");
+    return false;
+  }
+
   const hash = crypto
-    .createHmac("sha256", process.env.SHOPIFY_WEBHOOK_SECRET)
+    .createHmac("sha256", secret)
     .update(req.rawBody)
     .digest("base64");
+
   return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(hmac));
 }
 
@@ -23,7 +29,7 @@ app.post("/webhook/orders-create", async (req, res) => {
     return res.status(401).send("Unauthorized");
   }
 
-  res.status(200).send("OK"); // Respond immediately to Shopify
+  res.status(200).send("OK");
 
   try {
     await processOrder(req.body);
