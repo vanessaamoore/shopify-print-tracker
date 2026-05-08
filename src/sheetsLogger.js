@@ -16,7 +16,14 @@ function getOAuthClient() {
 
 function getToken() {
   if (process.env.GOOGLE_OAUTH_TOKEN) {
-    return JSON.parse(process.env.GOOGLE_OAUTH_TOKEN);
+    try {
+      return JSON.parse(process.env.GOOGLE_OAUTH_TOKEN);
+    } catch (e) {
+      console.error("Failed to parse GOOGLE_OAUTH_TOKEN:", e.message);
+      console.error("Token value starts with:", process.env.GOOGLE_OAUTH_TOKEN.substring(0, 50));
+    }
+  } else {
+    console.error("GOOGLE_OAUTH_TOKEN environment variable is not set");
   }
   if (fs.existsSync(TOKEN_PATH)) {
     return JSON.parse(fs.readFileSync(TOKEN_PATH));
