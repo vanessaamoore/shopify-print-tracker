@@ -39,6 +39,7 @@ async function processOrder(order) {
         quantity,
         "⚠️ Check mapping",
         "",
+        productType,
       ]);
       continue;
     }
@@ -58,9 +59,16 @@ async function processOrder(order) {
         item.properties && item.properties.length > 0
           ? item.properties.map(p => `${p.name}: ${p.value}`).join(" • ")
           : "",
+        productType,
       ]);
       continue;
     }
+
+    const productType = /baby tee/i.test(productTitle) ? "Baby Tee" :
+      /tee|t-shirt/i.test(productTitle) ? "Tee" :
+      /hoodie/i.test(productTitle) ? "Hoodie" :
+      /sweatpant/i.test(productTitle) ? "Sweatpant" :
+      /short/i.test(productTitle) ? "Short" : "Crew";
 
     const customSpecs = item.properties && item.properties.length > 0
       ? item.properties.map(p => `${p.name}: ${p.value}`).join(" • ")
@@ -68,7 +76,7 @@ async function processOrder(order) {
 
     for (const print of prints) {
       console.log(`  ✅ ${productTitle} | ${color} → ${print} (qty: ${quantity})`);
-      rows.push([orderDate, orderNumber, productTitle, color, print, quantity, "✅", customSpecs]);
+      rows.push([orderDate, orderNumber, productTitle, color, print, quantity, "✅", customSpecs, productType]);
     }
   }
 

@@ -59,7 +59,7 @@ async function appendPrintRows(rows) {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: "Print Log!A:H",
+    range: "Print Log!A:I",
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: rows },
@@ -72,7 +72,7 @@ async function initializeSheet() {
 
   const existing = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: "Print Log!A1:H1",
+    range: "Print Log!A1:I1",
   });
 
   if (existing.data.values && existing.data.values.length > 0) {
@@ -82,10 +82,10 @@ async function initializeSheet() {
 
   await sheets.spreadsheets.values.update({
     spreadsheetId,
-    range: "Print Log!A1:H1",
+    range: "Print Log!A1:I1",
     valueInputOption: "USER_ENTERED",
     requestBody: {
-      values: [["Date", "Order #", "Product", "Color", "Print Name", "Quantity", "Status", "Customer Specs"]],
+      vvalues: [["Date", "Order #", "Product", "Color", "Print Name", "Quantity", "Status", "Customer Specs", "Product Type"]],
     },
   });
 
