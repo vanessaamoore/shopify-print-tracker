@@ -21,7 +21,9 @@ async function processOrder(order) {
       /tee|t-shirt/i.test(productTitle) ? "Tee" :
       /hoodie/i.test(productTitle) ? "Hoodie" :
       /sweatpant/i.test(productTitle) ? "Sweatpant" :
-      /short/i.test(productTitle) ? "Short" : "Crew";
+      /short/i.test(productTitle) ? "Short" :
+      /tank/i.test(productTitle) ? "Tank" :
+      /tote/i.test(productTitle) ? "Tote" : "Crew";
 
     const customSpecs = item.properties && item.properties.length > 0
       ? item.properties.map(p => `${p.name}: ${p.value}`).join(" • ")
