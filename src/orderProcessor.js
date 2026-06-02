@@ -1,11 +1,6 @@
 const { getPrintsForVariant } = require("../config/printMappings");
 const { appendPrintRows } = require("./sheetsLogger");
 
-/**
- * Processes a Shopify order webhook payload.
- * Extracts line items, finds color variants, maps to prints,
- * and logs each to Google Sheets.
- */
 async function processOrder(order) {
   const orderNumber = order.name || order.order_number;
   const orderDate = new Date(order.created_at).toLocaleString("en-US", {
@@ -20,13 +15,17 @@ async function processOrder(order) {
     const productTitle = item.title;
     const quantity = item.quantity;
 
-    // Find the Color option from variant options
-    const variantOptions = item.variant_title
-      ? item.variant_title.split(" / ")
-      : [];
-
-    // Get full variant properties to find color
     const color = extractColor(item);
+
+    const productType = /baby tee/i.test(productTitle) ? "Baby Tee" :
+      /tee|t-shirt/i.test(productTitle) ? "Tee" :
+      /hoodie/i.test(productTitle) ? "Hoodie" :
+      /sweatpant/i.test(productTitle) ? "Sweatpant" :
+      /short/i.test(productTitle) ? "Short" : "Crew";
+
+    const customSpecs = item.properties && item.properties.length > 0
+      ? item.properties.map(p => `${p.name}: ${p.value}`).join(" • ")
+      : "";
 
     if (!color) {
       console.warn(`  ⚠️  No color found for: ${productTitle} — skipping`);
@@ -56,23 +55,11 @@ async function processOrder(order) {
         "UNMAPPED — add to printMappings.js",
         quantity,
         "⚠️ Needs mapping",
-        item.properties && item.properties.length > 0
-          ? item.properties.map(p => `${p.name}: ${p.value}`).join(" • ")
-          : "",
+        customSpecs,
         productType,
       ]);
       continue;
     }
-
-    const productType = /baby tee/i.test(productTitle) ? "Baby Tee" :
-      /tee|t-shirt/i.test(productTitle) ? "Tee" :
-      /hoodie/i.test(productTitle) ? "Hoodie" :
-      /sweatpant/i.test(productTitle) ? "Sweatpant" :
-      /short/i.test(productTitle) ? "Short" : "Crew";
-
-    const customSpecs = item.properties && item.properties.length > 0
-      ? item.properties.map(p => `${p.name}: ${p.value}`).join(" • ")
-      : "";
 
     for (const print of prints) {
       console.log(`  ✅ ${productTitle} | ${color} → ${print} (qty: ${quantity})`);
@@ -86,12 +73,7 @@ async function processOrder(order) {
   }
 }
 
-/**
- * Extracts the color from a Shopify line item.
- * Checks variant_title and properties for a "Color" field.
- */
 function extractColor(item) {
-  // Try properties first (e.g. custom line item properties)
   if (item.properties) {
     const colorProp = item.properties.find(
       (p) => p.name.toLowerCase() === "color"
@@ -99,10 +81,8 @@ function extractColor(item) {
     if (colorProp) return colorProp.value;
   }
 
-  // Try variant_title (e.g. "Black / Large" → "Black")
   if (item.variant_title) {
     const parts = item.variant_title.split(" / ");
-    // Return the first part — adjust index if color is not first in your store
     return parts[0] || null;
   }
 
