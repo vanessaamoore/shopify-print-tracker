@@ -1,5 +1,5 @@
 const { getPrintsForVariant } = require("../config/printMappings");
-const { appendPrintRows } = require("./sheetsLogger");
+const { appendPrintRows, getSkipList } = require("./sheetsLogger");
 
 async function processOrder(order) {
   const orderNumber = order.name || order.order_number;
@@ -9,11 +9,21 @@ async function processOrder(order) {
 
   console.log(`\n📦 Processing order ${orderNumber}`);
 
+  const skipList = await getSkipList();
   const rows = [];
 
   for (const item of order.line_items) {
     const productTitle = item.title;
     const quantity = item.quantity;
+
+    // Check if this product should be skipped
+    const shouldSkip = skipList.some(
+      (title) => title.toLowerCase() === productTitle.toLowerCase()
+    );
+    if (shouldSkip) {
+      console.log(`  ⏭️  Skipping plain item: ${productTitle}`);
+      continue;
+    }
 
     const color = extractColor(item);
 

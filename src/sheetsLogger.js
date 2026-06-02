@@ -115,5 +115,19 @@ async function getSheetId(sheets, spreadsheetId, sheetName) {
   );
   return sheet ? sheet.properties.sheetId : 0;
 }
-
-module.exports = { appendPrintRows, initializeSheet };
+async function getSkipList() {
+  try {
+    const sheets = await getSheetsClient();
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+    const result = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "Skip List!A2:A",
+    });
+    const rows = result.data.values || [];
+    return rows.map((row) => row[0]).filter(Boolean);
+  } catch (err) {
+    console.warn("Could not load skip list:", err.message);
+    return [];
+  }
+}
+module.exports = { appendPrintRows, initializeSheet, getSkipList };
