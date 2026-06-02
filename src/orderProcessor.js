@@ -38,6 +38,7 @@ async function processOrder(order) {
         "No color variant found",
         quantity,
         "⚠️ Check mapping",
+        "",
       ]);
       continue;
     }
@@ -54,13 +55,20 @@ async function processOrder(order) {
         "UNMAPPED — add to printMappings.js",
         quantity,
         "⚠️ Needs mapping",
+        item.properties && item.properties.length > 0
+          ? item.properties.map(p => `${p.name}: ${p.value}`).join(" • ")
+          : "",
       ]);
       continue;
     }
 
+    const customSpecs = item.properties && item.properties.length > 0
+      ? item.properties.map(p => `${p.name}: ${p.value}`).join(" • ")
+      : "";
+
     for (const print of prints) {
       console.log(`  ✅ ${productTitle} | ${color} → ${print} (qty: ${quantity})`);
-      rows.push([orderDate, orderNumber, productTitle, color, print, quantity, "✅"]);
+      rows.push([orderDate, orderNumber, productTitle, color, print, quantity, "✅", customSpecs]);
     }
   }
 
