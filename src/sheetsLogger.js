@@ -115,6 +115,31 @@ async function getSheetId(sheets, spreadsheetId, sheetName) {
   );
   return sheet ? sheet.properties.sheetId : 0;
 }
+async function getPrintReference() {
+  try {
+    const sheets = await getSheetsClient();
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+    const result = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "Print Reference!A3:I",
+    });
+    const rows = result.data.values || [];
+    return rows.map((row) => ({
+      productTitle: (row[0] || "").trim(),
+      designName: (row[1] || "").trim(),
+      garmentType: (row[2] || "").trim(),
+      print1: (row[3] || "").trim(),
+      print2: (row[4] || "").trim(),
+      print3: (row[5] || "").trim(),
+      howDetermined: (row[6] || "").trim(),
+      customerSpecKey: (row[7] || "").trim(),
+      notes: (row[8] || "").trim(),
+    }));
+  } catch (err) {
+    console.warn("Could not load print reference:", err.message);
+    return [];
+  }
+}
 async function getSkipList() {
   try {
     const sheets = await getSheetsClient();
@@ -130,4 +155,4 @@ async function getSkipList() {
     return [];
   }
 }
-module.exports = { appendPrintRows, initializeSheet, getSkipList };
+module.exports = { appendPrintRows, initializeSheet, getSkipList, getPrintReference };
