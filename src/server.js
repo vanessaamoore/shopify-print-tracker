@@ -4,7 +4,10 @@ const { processOrder } = require("./orderProcessor");
 
 const app = express();
 
-app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
+app.use(express.json({ 
+  limit: "10mb",
+  verify: (req, res, buf) => { req.rawBody = buf; } 
+}));
 
 function verifyShopifyWebhook(req) {
   const hmac = req.headers["x-shopify-hmac-sha256"];
