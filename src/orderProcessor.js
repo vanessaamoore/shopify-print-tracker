@@ -190,6 +190,16 @@ function extractColor(item) {
 
   if (item.variant_title) {
     const parts = item.variant_title.split(" / ");
+    if (parts[0] && !/^\d+X?L?S?$/i.test(parts[0].trim())) {
+      return parts[0].trim();
+    }
+  }
+
+  return "No Color";
+}
+
+  if (item.variant_title) {
+    const parts = item.variant_title.split(" / ");
     return parts[0] || null;
   }
 
