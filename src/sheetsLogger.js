@@ -126,14 +126,15 @@ async function getPrintReference() {
     const rows = result.data.values || [];
     return rows.map((row) => ({
       productTitle: (row[0] || "").trim(),
-      designName: (row[1] || "").trim(),
-      garmentType: (row[2] || "").trim(),
-      print1: (row[3] || "").trim(),
-      print2: (row[4] || "").trim(),
-      print3: (row[5] || "").trim(),
-      howDetermined: (row[6] || "").trim(),
-      customerSpecKey: (row[7] || "").trim(),
-      notes: (row[8] || "").trim(),
+designName: (row[1] || "").trim(),
+garmentType: (row[2] || "").trim(),
+color: (row[3] || "").trim(),
+print1: (row[4] || "").trim(),
+print2: (row[5] || "").trim(),
+print3: (row[6] || "").trim(),
+howDetermined: (row[7] || "").trim(),
+customerSpecKey: (row[8] || "").trim(),
+notes: (row[9] || "").trim(),
     }));
   } catch (err) {
     console.warn("Could not load print reference:", err.message);
