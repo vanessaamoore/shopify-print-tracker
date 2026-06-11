@@ -154,6 +154,9 @@ function resolveFromSpecs(customSpecs, specMap) {
 
   const specLines = customSpecs.split("•").map(s => s.trim().toUpperCase());
 
+  console.log("🔍 specLines:", JSON.stringify(specLines));
+  console.log("🔍 specMap keys:", JSON.stringify(Object.keys(specMap)));
+
   for (const specLine of specLines) {
     if (specMap[specLine]) return specMap[specLine];
 
