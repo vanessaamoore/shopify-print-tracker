@@ -168,6 +168,7 @@ function resolveFromSpecs(customSpecs, specMap) {
 }
 
 function extractColor(item) {
+  // 1. Check line item properties first
   if (item.properties) {
     const colorProp = item.properties.find(
       (p) => p.name.toLowerCase() === "color"
@@ -175,14 +176,19 @@ function extractColor(item) {
     if (colorProp) return colorProp.value;
   }
 
-  if (item.variant_title) {
+  // 2. Try variant_title, skipping size-only values
+  if (item.variant_title && item.variant_title !== "Default Title") {
     const parts = item.variant_title.split(" / ");
-    if (parts[0] && !/^\d+X?L?S?$/i.test(parts[0].trim())) {
-      return parts[0].trim();
-    }
+    const sizeRegex = /^(XS|S|M|L|XL|XXL|2XL|3XL|\d+XL?|one size)$/i;
+    const colorPart = parts.find(p => !sizeRegex.test(p.trim()));
+    if (colorPart) return colorPart.trim();
   }
 
-  return "No Color";
+  // 3. Extract color from product title suffix e.g. "Hoodie - Breeze" → "Breeze"
+  const titleColorMatch = item.title.match(/[-–]\s*([A-Za-z\s]+)$/);
+  if (titleColorMatch) return titleColorMatch[1].trim();
+
+  return null;
 }
 
 module.exports = { processOrder };
