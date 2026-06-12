@@ -37,9 +37,21 @@ async function processOrder(order) {
       /tank/i.test(productTitle) ? "Tank" :
       /tote/i.test(productTitle) ? "Tote" : "Crew";
 
-    const customSpecs = item.properties && item.properties.length > 0
+    let customSpecs = item.properties && item.properties.length > 0
       ? item.properties.map(p => `${p.name}: ${p.value}`).join(" • ")
       : "";
+
+    // For variants like "Garment Color / Print Color / Size",
+    // capture the second part as the print color spec
+    if (item.variant_title) {
+      const sizeRegex = /^(XS|S|M|L|XL|XXL|2XL|3XL|\d+XL?|one size)$/i;
+      const variantParts = item.variant_title.split(" / ").map(p => p.trim());
+      const nonSizeParts = variantParts.filter(p => !sizeRegex.test(p));
+      if (nonSizeParts.length > 1) {
+        const printColorSpec = `FRONT PRINT COLOR: ${nonSizeParts[1].toUpperCase()}`;
+        customSpecs = customSpecs ? `${customSpecs} • ${printColorSpec}` : printColorSpec;
+      }
+    }
 
     const ref = findReference(printReference, productTitle, color || "");
 
