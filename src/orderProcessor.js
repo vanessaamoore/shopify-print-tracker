@@ -41,7 +41,9 @@ async function processOrder(order) {
       ? item.properties.map(p => `${p.name}: ${p.value}`).join(" • ")
       : "";
 
-    if (!color) {
+    const ref = findReference(printReference, productTitle, color || "");
+
+    if (!ref && !color) {
       console.warn(`  ⚠️  No color found for: ${productTitle}`);
       rows.push([
         orderDate, orderNumber, productTitle, "Unknown",
@@ -49,8 +51,6 @@ async function processOrder(order) {
       ]);
       continue;
     }
-
-    const ref = findReference(printReference, productTitle, color);
 
     if (!ref) {
       console.warn(`  ⚠️  No print reference for: ${productTitle} / ${color}`);
