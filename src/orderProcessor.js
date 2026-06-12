@@ -27,7 +27,15 @@ async function processOrder(order) {
       continue;
     }
 
-    const color = extractColor(item);
+    const color = extractColor(item, productTitle);
+
+    // If the title has a "- Color" or "-Color" suffix matching the extracted
+    // color, strip it so we match the base product title in the reference sheet
+    let lookupTitle = productTitle;
+    const suffixMatch = productTitle.match(/^(.*?)[-–]\s*([A-Za-z][A-Za-z\s]*)$/);
+    if (suffixMatch && suffixMatch[2].trim().toLowerCase() === color.toLowerCase()) {
+      lookupTitle = suffixMatch[1].trim();
+    }
 
     const productType = /baby tee/i.test(productTitle) ? "Baby Tee" :
       /tee|t-shirt/i.test(productTitle) ? "Tee" :
@@ -53,7 +61,7 @@ async function processOrder(order) {
       }
     }
 
-    const ref = findReference(printReference, productTitle, color || "");
+    const ref = findReference(printReference, lookupTitle, color || "");
 
     if (!ref && !color) {
       console.warn(`  ⚠️  No color found for: ${productTitle}`);
@@ -179,7 +187,7 @@ function resolveFromSpecs(customSpecs, specMap) {
   return null;
 }
 
-function extractColor(item) {
+function extractColor(item, productTitle) {
   if (item.properties) {
     const colorProp = item.properties.find(
       (p) => p.name.toLowerCase() === "color"
@@ -187,12 +195,17 @@ function extractColor(item) {
     if (colorProp) return colorProp.value;
   }
 
-  if (item.variant_title) {
-    const parts = item.variant_title.split(" / ");
-    if (parts[0] && !/^\d+X?L?S?$/i.test(parts[0].trim())) {
-      return parts[0].trim();
-    }
+  const sizeRegex = /^(XS|S|M|L|XL|XXL|2XL|3XL|4XL|\d+XL?|one size)$/i;
+
+  if (item.variant_title && item.variant_title !== "Default Title") {
+    const parts = item.variant_title.split(" / ").map(p => p.trim());
+    const colorPart = parts.find(p => !sizeRegex.test(p));
+    if (colorPart) return colorPart;
   }
+
+  // Fallback: pull color from a "- Color" suffix on the product title
+  const titleMatch = productTitle.match(/[-–]\s*([A-Za-z][A-Za-z\s]*)$/);
+  if (titleMatch) return titleMatch[1].trim();
 
   return "No Color";
 }
