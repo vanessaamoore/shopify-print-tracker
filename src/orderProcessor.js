@@ -87,12 +87,12 @@ async function processOrder(order) {
 }
 
 function findReference(printReference, productTitle, color) {
-  // First try to match on title + color
+  // First try to match on title + color (supports comma-separated color lists)
   const colorMatch = printReference.find(
     (r) =>
       r.productTitle.toLowerCase() === productTitle.toLowerCase() &&
       r.color &&
-      r.color.toLowerCase() === color.toLowerCase()
+      r.color.split(",").map(c => c.trim().toLowerCase()).includes(color.toLowerCase())
   );
   if (colorMatch) return colorMatch;
 
@@ -154,9 +154,6 @@ function resolveFromSpecs(customSpecs, specMap) {
 
   const specLines = customSpecs.split("•").map(s => s.trim().toUpperCase());
 
-  console.log("🔍 specLines:", JSON.stringify(specLines));
-  console.log("🔍 specMap keys:", JSON.stringify(Object.keys(specMap)));
-
   for (const specLine of specLines) {
     if (specMap[specLine]) return specMap[specLine];
 
@@ -171,7 +168,6 @@ function resolveFromSpecs(customSpecs, specMap) {
 }
 
 function extractColor(item) {
-  // 1. Check line item properties first
   if (item.properties) {
     const colorProp = item.properties.find(
       (p) => p.name.toLowerCase() === "color"
@@ -179,19 +175,14 @@ function extractColor(item) {
     if (colorProp) return colorProp.value;
   }
 
-  // 2. Try variant_title, skipping size-only values
-  if (item.variant_title && item.variant_title !== "Default Title") {
+  if (item.variant_title) {
     const parts = item.variant_title.split(" / ");
-    const sizeRegex = /^(XS|S|M|L|XL|XXL|2XL|3XL|\d+XL?|one size)$/i;
-    const colorPart = parts.find(p => !sizeRegex.test(p.trim()));
-    if (colorPart) return colorPart.trim();
+    if (parts[0] && !/^\d+X?L?S?$/i.test(parts[0].trim())) {
+      return parts[0].trim();
+    }
   }
 
-  // 3. Extract color from product title suffix e.g. "Hoodie - Breeze" → "Breeze"
-  const titleColorMatch = item.title.match(/[-–]\s*([A-Za-z\s]+)$/);
-  if (titleColorMatch) return titleColorMatch[1].trim();
-
-  return null;
+  return "No Color";
 }
 
 module.exports = { processOrder };
