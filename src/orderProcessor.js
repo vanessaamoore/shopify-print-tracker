@@ -29,14 +29,6 @@ async function processOrder(order) {
 
     const color = extractColor(item, productTitle);
 
-    // If the title has a "- Color" or "-Color" suffix matching the extracted
-    // color, strip it so we match the base product title in the reference sheet
-    let lookupTitle = productTitle;
-    const suffixMatch = productTitle.match(/^(.*?)[-–]\s*([A-Za-z][A-Za-z\s]*)$/);
-    if (suffixMatch && suffixMatch[2].trim().toLowerCase() === color.toLowerCase()) {
-      lookupTitle = suffixMatch[1].trim();
-    }
-
     const productType = /baby tee/i.test(productTitle) ? "Baby Tee" :
       /tee|t-shirt/i.test(productTitle) ? "Tee" :
       /hoodie/i.test(productTitle) ? "Hoodie" :
@@ -61,7 +53,7 @@ async function processOrder(order) {
       }
     }
 
-    const ref = findReference(printReference, lookupTitle, color || "");
+    const ref = findReference(printReference, productTitle, color || "");
 
     if (!ref && !color) {
       console.warn(`  ⚠️  No color found for: ${productTitle}`);
@@ -107,10 +99,13 @@ async function processOrder(order) {
 }
 
 function findReference(printReference, productTitle, color) {
+  const normalize = (t) => t.toLowerCase().replace(/\s*-\s*/g, "-").trim();
+  const normTitle = normalize(productTitle);
+
   // First try to match on title + color (supports comma-separated color lists)
   const colorMatch = printReference.find(
     (r) =>
-      r.productTitle.toLowerCase() === productTitle.toLowerCase() &&
+      normalize(r.productTitle) === normTitle &&
       r.color &&
       r.color.split(",").map(c => c.trim().toLowerCase()).includes(color.toLowerCase())
   );
@@ -119,7 +114,7 @@ function findReference(printReference, productTitle, color) {
   // Fall back to title only (for products where color doesn't determine print)
   const titleMatch = printReference.find(
     (r) =>
-      r.productTitle.toLowerCase() === productTitle.toLowerCase() &&
+      normalize(r.productTitle) === normTitle &&
       !r.color
   );
   return titleMatch || null;
