@@ -19,8 +19,8 @@ async function processOrder(order) {
     const productTitle = rawTitle.replace(/^(Mariposa|Origins)\s+/i, "").trim();
 
     const shouldSkip = skipList.some(
-      (title) => title.toLowerCase() === rawTitle.toLowerCase() ||
-                 title.toLowerCase() === productTitle.toLowerCase()
+      (title) => title.trim().toLowerCase() === rawTitle.trim().toLowerCase() ||
+                 title.trim().toLowerCase() === productTitle.trim().toLowerCase()
     );
     if (shouldSkip) {
       console.log(`  ⏭️  Skipping plain item: ${rawTitle}`);

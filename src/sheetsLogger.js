@@ -150,7 +150,7 @@ async function getSkipList() {
       range: "Skip List!A2:A",
     });
     const rows = result.data.values || [];
-    return rows.map((row) => row[0]).filter(Boolean);
+    return rows.map((row) => (row[0] || "").trim()).filter(Boolean);
   } catch (err) {
     console.warn("Could not load skip list:", err.message);
     return [];
