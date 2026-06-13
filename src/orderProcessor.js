@@ -100,24 +100,38 @@ async function processOrder(order) {
 
 function findReference(printReference, productTitle, color) {
   const normalize = (t) => t.toLowerCase().replace(/\s*-\s*/g, "-").trim();
-  const normTitle = normalize(productTitle);
 
-  // First try to match on title + color (supports comma-separated color lists)
-  const colorMatch = printReference.find(
-    (r) =>
-      normalize(r.productTitle) === normTitle &&
-      r.color &&
-      r.color.split(",").map(c => c.trim().toLowerCase()).includes(color.toLowerCase())
-  );
-  if (colorMatch) return colorMatch;
+  // Build a version of the title with a trailing "-Color" suffix removed,
+  // if that suffix matches the extracted color
+  let strippedTitle = productTitle;
+  const suffixMatch = productTitle.match(/^(.*?)[-–]\s*([A-Za-z][A-Za-z\s]*)$/);
+  if (suffixMatch && color && suffixMatch[2].trim().toLowerCase() === color.toLowerCase()) {
+    strippedTitle = suffixMatch[1].trim();
+  }
 
-  // Fall back to title only (for products where color doesn't determine print)
-  const titleMatch = printReference.find(
-    (r) =>
-      normalize(r.productTitle) === normTitle &&
-      !r.color
-  );
-  return titleMatch || null;
+  const candidates = [normalize(productTitle)];
+  if (strippedTitle !== productTitle) candidates.push(normalize(strippedTitle));
+
+  // Try title + color match for each candidate title
+  for (const cand of candidates) {
+    const colorMatch = printReference.find(
+      (r) =>
+        normalize(r.productTitle) === cand &&
+        r.color &&
+        r.color.split(",").map(c => c.trim().toLowerCase()).includes(color.toLowerCase())
+    );
+    if (colorMatch) return colorMatch;
+  }
+
+  // Fall back to title-only rows (no color specified)
+  for (const cand of candidates) {
+    const titleMatch = printReference.find(
+      (r) => normalize(r.productTitle) === cand && !r.color
+    );
+    if (titleMatch) return titleMatch;
+  }
+
+  return null;
 }
 
 function resolvePrints(ref, customSpecs) {
