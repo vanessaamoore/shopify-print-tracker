@@ -101,7 +101,6 @@ async function processOrder(order) {
       console.log(`  ✅ ${productTitle} | ${color} → ${print} (qty: ${quantity})`);
       rows.push([orderDate, orderNumber, productTitle, color, print, quantity, "✅", customSpecs, productType]);
     }
-    }
   }
 
   if (rows.length > 0) {
