@@ -53,28 +53,40 @@ async function processOrder(order) {
       }
     }
 
-    const ref = findReference(printReference, productTitle, color || "");
+    // Check if this is a Safe with Me product (special handling)
+    const safeWithMePrints = handleSafeWithMe(productTitle, color);
+    let ref = null;
+    let resolvedPrints = null;
 
-    if (!ref && !color) {
-      console.warn(`  ⚠️  No color found for: ${productTitle}`);
-      rows.push([
-        orderDate, orderNumber, productTitle, "Unknown",
-        "No color variant found", quantity, "⚠️ Check mapping", "", productType,
-      ]);
-      continue;
+    if (safeWithMePrints) {
+      // Safe with Me products bypass the reference lookup
+      resolvedPrints = safeWithMePrints;
+      console.log(`  ✅ Safe with Me detected: ${safeWithMePrints.join(", ")}`);
+    } else {
+      // Normal products use the reference lookup
+      ref = findReference(printReference, productTitle, color || "");
+
+      if (!ref && !color) {
+        console.warn(`  ⚠️  No color found for: ${productTitle}`);
+        rows.push([
+          orderDate, orderNumber, productTitle, "Unknown",
+          "No color variant found", quantity, "⚠️ Check mapping", "", productType,
+        ]);
+        continue;
+      }
+
+      if (!ref) {
+        console.warn(`  ⚠️  No print reference for: ${productTitle} / ${color}`);
+        rows.push([
+          orderDate, orderNumber, productTitle, color,
+          "UNMAPPED — add to Print Reference sheet", quantity,
+          "⚠️ Needs mapping", customSpecs, productType,
+        ]);
+        continue;
+      }
+
+      resolvedPrints = resolvePrints(ref, customSpecs);
     }
-
-    if (!ref) {
-      console.warn(`  ⚠️  No print reference for: ${productTitle} / ${color}`);
-      rows.push([
-        orderDate, orderNumber, productTitle, color,
-        "UNMAPPED — add to Print Reference sheet", quantity,
-        "⚠️ Needs mapping", customSpecs, productType,
-      ]);
-      continue;
-    }
-
-    const resolvedPrints = resolvePrints(ref, customSpecs);
 
     if (!resolvedPrints || resolvedPrints.length === 0) {
       console.warn(`  ⚠️  Could not resolve prints for: ${productTitle}`);
@@ -85,10 +97,10 @@ async function processOrder(order) {
       ]);
       continue;
     }
-
     for (const print of resolvedPrints) {
       console.log(`  ✅ ${productTitle} | ${color} → ${print} (qty: ${quantity})`);
       rows.push([orderDate, orderNumber, productTitle, color, print, quantity, "✅", customSpecs, productType]);
+    }
     }
   }
 
