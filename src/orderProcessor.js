@@ -230,27 +230,28 @@ function extractColor(item, productTitle) {
   return "No Color";
 }
 function handleSafeWithMe(productTitle, color) {
-  // Check if this is a Safe with Me product
-  if (!productTitle.toLowerCase().includes("safe with me")) {
-    return null; // Not a Safe with Me product
+  // Only handle if color is "Safe with Me Print"
+  if (!color || color.toLowerCase() !== "safe with me print") {
+    return null;
   }
 
   const prints = [];
+  const titleLower = productTitle.toLowerCase();
 
-  // Extract front print type from product name
-  if (productTitle.toLowerCase().includes("social work")) {
+  // Extract front print type from product title
+  if (titleLower.includes("social work")) {
     prints.push("SW");
-  } else if (productTitle.toLowerCase().includes("nursing")) {
+  } else if (titleLower.includes("nursing")) {
     prints.push("NUR");
-  } else if (productTitle.toLowerCase().includes("psych")) {
+  } else if (titleLower.includes("psych")) {
     prints.push("PSYCH");
+  } else {
+    return null; // Not a recognized Safe with Me product
   }
 
-  // Add back print only if color is "Safe with Me Print"
-  if (color && color.toLowerCase() === "safe with me print") {
-    prints.push("SWM");
-  }
+  // Always add back print for Safe with Me
+  prints.push("SWM");
 
-  return prints.length > 0 ? prints : null;
+  return prints;
 }
 module.exports = { processOrder };
