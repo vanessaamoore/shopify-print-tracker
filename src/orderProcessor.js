@@ -218,5 +218,28 @@ function extractColor(item, productTitle) {
 
   return "No Color";
 }
+function handleSafeWithMe(productTitle, color) {
+  // Check if this is a Safe with Me product
+  if (!productTitle.toLowerCase().includes("safe with me")) {
+    return null; // Not a Safe with Me product
+  }
 
+  const prints = [];
+
+  // Extract front print type from product name
+  if (productTitle.toLowerCase().includes("social work")) {
+    prints.push("SW");
+  } else if (productTitle.toLowerCase().includes("nursing")) {
+    prints.push("NUR");
+  } else if (productTitle.toLowerCase().includes("psych")) {
+    prints.push("PSYCH");
+  }
+
+  // Add back print only if color is "Safe with Me Print"
+  if (color && color.toLowerCase() === "safe with me print") {
+    prints.push("SWM");
+  }
+
+  return prints.length > 0 ? prints : null;
+}
 module.exports = { processOrder };
