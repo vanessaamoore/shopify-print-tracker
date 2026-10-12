@@ -1,4 +1,5 @@
 const { appendPrintRows, getSkipList, getPrintReference } = require("./sheetsLogger");
+const { PROFESSION_FRONT_PRINTS, BACK_PRINT_OPTIONS } = require("../config/professions");
 
 async function processOrder(order) {
   const orderNumber = order.name || order.order_number;
@@ -30,6 +31,7 @@ async function processOrder(order) {
     const color = extractColor(item, productTitle);
 
     const productType = /baby tee/i.test(productTitle) ? "Baby Tee" :
+      /mock\s*-?neck/i.test(productTitle) ? "Mockneck" :
       /tee|t-shirt/i.test(productTitle) ? "Tee" :
       /hoodie/i.test(productTitle) ? "Hoodie" :
       /sweatpant/i.test(productTitle) ? "Sweatpant" :
@@ -53,15 +55,16 @@ async function processOrder(order) {
       }
     }
 
-    // Check if this is a Safe with Me product (special handling)
-    const safeWithMePrints = handleSafeWithMe(productTitle, color);
+    // Profession products (e.g. "THERAPIST Mockneck - Honeycrisp" with a
+    // Plain / Safe With Me Print / Healing Isn't Linear option) get their
+    // prints from config/professions.js and skip the reference lookup.
+    const professionPrints = handleProfession(productTitle, color);
     let ref = null;
     let resolvedPrints = null;
 
-    if (safeWithMePrints) {
-      // Safe with Me products bypass the reference lookup
-      resolvedPrints = safeWithMePrints;
-      console.log(`  ✅ Safe with Me detected: ${safeWithMePrints.join(", ")}`);
+    if (professionPrints) {
+      resolvedPrints = professionPrints;
+      console.log(`  ✅ Profession product detected: ${professionPrints.join(", ")}`);
     } else {
       // Normal products use the reference lookup
       ref = findReference(printReference, productTitle, color || "");
@@ -229,29 +232,32 @@ function extractColor(item, productTitle) {
 
   return "No Color";
 }
-function handleSafeWithMe(productTitle, color) {
-  // Only handle if color is "Safe with Me Print"
-  if (!color || color.toLowerCase() !== "safe with me print") {
-    return null;
-  }
+// Straighten curly apostrophes, collapse spaces, lowercase — for matching only
+function normalizeText(t) {
+  return (t || "").replace(/[‘’]/g, "'").replace(/\s+/g, " ").trim().toLowerCase();
+}
 
-  const prints = [];
-  const titleLower = productTitle.toLowerCase();
+/**
+ * Returns [frontPrint, ...backPrints] for a profession product, or null if the
+ * title doesn't start with a known profession or the option isn't a known
+ * back-print option (those fall through to the Print Reference lookup).
+ */
+function handleProfession(productTitle, option) {
+  const backKey = Object.keys(BACK_PRINT_OPTIONS).find(
+    (k) => normalizeText(k) === normalizeText(option)
+  );
+  if (!backKey) return null;
 
-  // Extract front print type from product title
-  if (titleLower.includes("social work")) {
-    prints.push("SW");
-  } else if (titleLower.includes("nursing")) {
-    prints.push("NUR");
-  } else if (titleLower.includes("psych")) {
-    prints.push("PSYCH");
-  } else {
-    return null; // Not a recognized Safe with Me product
-  }
+  const title = normalizeText(productTitle).replace(/^\(pre-?order\)\s*/, "");
 
-  // Always add back print for Safe with Me
-  prints.push("SWM");
+  // Longest names first so e.g. "OCCUPATIONAL THERAPY" is checked before shorter names
+  const professions = Object.keys(PROFESSION_FRONT_PRINTS).sort((a, b) => b.length - a.length);
+  const profession = professions.find((p) => {
+    const name = normalizeText(p);
+    return title === name || title.startsWith(name + " ");
+  });
+  if (!profession) return null;
 
-  return prints;
+  return [PROFESSION_FRONT_PRINTS[profession], ...BACK_PRINT_OPTIONS[backKey]];
 }
 module.exports = { processOrder };
