@@ -17,7 +17,10 @@ async function processOrder(order) {
     const rawTitle = item.title;
     const quantity = item.quantity;
 
-    const productTitle = rawTitle.replace(/^(Mariposa|Origins)\s+/i, "").trim();
+      const productTitle = rawTitle
+    .replace(/^\s*\(\s*pre-?\s*order\s*\)\s*/i, "")
+    .replace(/^(Mariposa|Origins)\s+/i, "")
+    .trim();
 
     const shouldSkip = skipList.some(
       (title) => title.trim().toLowerCase() === rawTitle.trim().toLowerCase() ||
